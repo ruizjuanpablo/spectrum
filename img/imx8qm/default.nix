@@ -34,7 +34,7 @@ stdenvNoCC.mkDerivation {
       .partitiontable |
       .sectorsize * (.partitions[] | select(.type == ESP_GUID) | .start)
     ')
-    mcopy -no -i spectrum-live-imx8qm.img@@$ESP_OFFSET ${kernel}/dtbs/freescale/imx8qm-mek-hdmi.dtb ::/
+    mcopy -no -i spectrum-live-imx8qm.img@@$ESP_OFFSET ${kernel}/dtbs/freescale/imx8qm-mek-kvm-host.dtb ::/
     mcopy -no -i spectrum-live-imx8qm.img@@$ESP_OFFSET ${pkgs.imx-firmware}/hdmitxfw.bin ::/
     mv spectrum-live-imx8qm.img $out
   '';
