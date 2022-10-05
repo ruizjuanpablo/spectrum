@@ -18,6 +18,11 @@ let
     inherit pkgs;
     # inherit (foot) terminfo;
   };
+
+  appvm-display = import ../../vm/app/display {
+    inherit pkgs;
+    # inherit (foot) terminfo;
+  };
 in
 
 runCommand "ext.ext4" {
@@ -30,6 +35,8 @@ runCommand "ext.ext4" {
   tar -C ${appvm-catgirl} -c data | tar -C svc -x
   chmod +w svc/data
   tar -C ${appvm-lynx} -c data | tar -C svc -x
+  chmod +w svc/data
+  tar -C ${appvm-display} -c data | tar -C svc -x
 
   tar -cf ext.tar svc
   tar2ext4 -i ext.tar -o $out
