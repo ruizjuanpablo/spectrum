@@ -1,0 +1,128 @@
+From b8685d9a03c2e781a9ed5334befa238d04397942 Mon Sep 17 00:00:00 2001
+From: Juan Pablo Ruiz <juanpablo@ssrc.tii.ae>
+Date: Fri, 30 Sep 2022 16:38:20 +0400
+Subject: [PATCH 1/1] Increased VFIO platform size
+
+- Increase the VFIO platform bus size from 32MB to 48MB
+- Change the VM RAM base address from 0x4000 0000 to 0x8000 0000
+- Prints the virtual IRQs for the passthrough devic
+
+Signed-off-by: Juan Pablo Ruiz <juanpablo.ruiz@tii.ae>
+---
+ hw/arm/boot.c      | 13 ++++++++++++-
+ hw/arm/virt.c      |  4 ++--
+ hw/vfio/platform.c | 15 +++++++++++++++
+ 3 files changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/hw/arm/boot.c b/hw/arm/boot.c
+index a47f38dfc9..56b7ba35b4 100644
+--- a/hw/arm/boot.c
++++ b/hw/arm/boot.c
+@@ -40,6 +40,12 @@
+ 
+ #define BOOTLOADER_MAX_SIZE         (4 * KiB)
+ 
++/* Put in zero if you do not want that Qemu update the 
++ * memory configuraiton on the device tree */
++#define ENABLE_UPDATE_RAM_ON_DTB      0
++ 
++
++
+ AddressSpace *arm_boot_address_space(ARMCPU *cpu,
+                                      const struct arm_boot_info *info)
+ {
+@@ -590,6 +596,7 @@ int arm_load_dtb(hwaddr addr, const struct arm_boot_info *binfo,
+         goto fail;
+     }
+ 
++#if ENABLE_UPDATE_RAM_ON_DTB
+     /* nop all root nodes matching /memory or /memory@unit-address */
+     node_path = qemu_fdt_node_unit_path(fdt, "memory", &err);
+     if (err) {
+@@ -603,6 +610,7 @@ int arm_load_dtb(hwaddr addr, const struct arm_boot_info *binfo,
+         n++;
+     }
+     g_strfreev(node_path);
++#endif
+ 
+     /*
+      * We drop all the memory nodes which correspond to empty NUMA nodes
+@@ -620,9 +628,10 @@ int arm_load_dtb(hwaddr addr, const struct arm_boot_info *binfo,
+             if (!mem_len) {
+                 continue;
+             }
+-
++#if ENABLE_UPDATE_RAM_ON_DTB
+             rc = fdt_add_memory_node(fdt, acells, mem_base,
+                                      scells, mem_len, i);
++#endif                            
+             if (rc < 0) {
+                 fprintf(stderr, "couldn't add /memory@%"PRIx64" node\n",
+                         mem_base);
+@@ -632,8 +641,10 @@ int arm_load_dtb(hwaddr addr, const struct arm_boot_info *binfo,
+             mem_base += mem_len;
+         }
+     } else {
++#if ENABLE_UPDATE_RAM_ON_DTB
+         rc = fdt_add_memory_node(fdt, acells, binfo->loader_start,
+                                  scells, binfo->ram_size, -1);
++#endif
+         if (rc < 0) {
+             fprintf(stderr, "couldn't add /memory@%"PRIx64" node\n",
+                     binfo->loader_start);
+diff --git a/hw/arm/virt.c b/hw/arm/virt.c
+index d2e5ecd234..f7d583722c 100644
+--- a/hw/arm/virt.c
++++ b/hw/arm/virt.c
+@@ -156,13 +156,13 @@ static const MemMapEntry base_memmap[] = {
+     [VIRT_SECURE_GPIO] =        { 0x090b0000, 0x00001000 },
+     [VIRT_MMIO] =               { 0x0a000000, 0x00000200 },
+     /* ...repeating for a total of NUM_VIRTIO_TRANSPORTS, each of that size */
+-    [VIRT_PLATFORM_BUS] =       { 0x0c000000, 0x02000000 },
++    [VIRT_PLATFORM_BUS] =       { 0x0b000000, 0x03000000 },
+     [VIRT_SECURE_MEM] =         { 0x0e000000, 0x01000000 },
+     [VIRT_PCIE_MMIO] =          { 0x10000000, 0x2eff0000 },
+     [VIRT_PCIE_PIO] =           { 0x3eff0000, 0x00010000 },
+     [VIRT_PCIE_ECAM] =          { 0x3f000000, 0x01000000 },
+     /* Actual RAM size depends on initial RAM and device memory settings */
+-    [VIRT_MEM] =                { GiB, LEGACY_RAMLIMIT_BYTES },
++    [VIRT_MEM] =                { 2*GiB, LEGACY_RAMLIMIT_BYTES },
+ };
+ 
+ /*
+diff --git a/hw/vfio/platform.c b/hw/vfio/platform.c
+index 5af73f9287..84cd7c985a 100644
+--- a/hw/vfio/platform.c
++++ b/hw/vfio/platform.c
+@@ -36,6 +36,14 @@
+ #include "hw/qdev-properties.h"
+ #include "sysemu/kvm.h"
+ 
++struct IRQState2 {
++    Object parent_obj;
++
++    qemu_irq_handler handler;
++    void *opaque;
++    int n;
++};
++
+ /*
+  * Functions used whatever the injection method
+  */
+@@ -385,6 +393,13 @@ static void vfio_start_irqfd_injection(SysBusDevice *sbdev, qemu_irq irq)
+ 
+     QLIST_FOREACH(intp, &vdev->intp_list, next) {
+         if (intp->qemuirq == irq) {
++            // Print the virtual IRQ assgined to each device
++            if(intp->qemuirq){
++                struct IRQState2 *v1;
++                v1 = intp->qemuirq;
++                info_report("********** QEMU IRQ No: 0x%X, dec: %d, pin: %d **********", v1->n, v1->n, intp->pin);
++            }
++
+             break;
+         }
+     }
+-- 
+2.34.1
+
