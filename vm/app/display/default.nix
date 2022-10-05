@@ -47,7 +47,7 @@ let
         -T ${writeReferencesToFile packagesSysroot} .
   '';
 
-  kernel = pkgs.linux_latest.override {
+  kernel = pkgs.linux_imx8_display_vm.override {
     structuredExtraConfig = with lib.kernel; {
       EFI_STUB=yes;
       EFI=yes;
