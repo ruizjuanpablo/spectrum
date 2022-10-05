@@ -20,8 +20,14 @@ let
 
   foot = pkgsGui.foot.override { allowPgo = false; };
 
+  qemu = pkgs.pkgsMusl.qemu.override { 
+    gtkSupport = false; 
+    sdlSupport = false; 
+    extraPatches = [./0001-Increased-VFIO-platform-size.patch];
+  };
+
   packages = [
-    cloud-hypervisor execline jq kmod mdevd s6 s6-linux-init s6-rc socat
+    qemu cloud-hypervisor execline jq kmod mdevd s6 s6-linux-init s6-rc socat
     start-vm
 
     (cryptsetup.override {
