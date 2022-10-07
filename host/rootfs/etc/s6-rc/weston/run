@@ -24,4 +24,3 @@ redirfd -r 0 /dev/tty1
 
 importas -i home HOME
 cd $home
-weston

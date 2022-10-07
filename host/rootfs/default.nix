@@ -14,11 +14,6 @@ let
 
   start-vm = import ../start-vm { pkgs = pkgs.pkgsStatic; };
 
-  pkgsGui = pkgs.pkgsMusl.extend (final: super: {
-    systemd = final.libudev-zero;
-  });
-
-  foot = pkgsGui.foot.override { allowPgo = false; };
 
   qemu = pkgs.pkgsMusl.qemu.override { 
     gtkSupport = false; 
@@ -50,7 +45,7 @@ let
         CONFIG_RMMOD n
       '';
     })
-  ] ++ (with pkgsGui; [ foot westonLite ]);
+  ];
 
   nixosAllHardware = nixos ({ modulesPath, ... }: {
     imports = [ (modulesPath + "/profiles/all-hardware.nix") ];
@@ -72,10 +67,6 @@ let
   } ''
     mkdir -p $out/lib $out/usr/bin
     ln -s ${concatMapStringsSep " " (p: "${p}/bin/*") packages} $out/usr/bin
-
-    for pkg in ${lib.escapeShellArgs [ pkgsGui.mesa.drivers pkgsGui.dejavu_fonts ]}; do
-        lndir -silent "$pkg" "$out/usr"
-    done
 
     ln -s ${kernel}/lib/modules ${firmware}/lib/firmware $out/lib
 

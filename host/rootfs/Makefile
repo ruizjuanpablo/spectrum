@@ -33,8 +33,6 @@ FILES = \
 	etc/s6-linux-init/run-image/service/getty-ttyS0/run \
 	etc/s6-linux-init/run-image/service/getty-ttyLP0/run \
 	etc/s6-linux-init/scripts/rc.init \
-	etc/xdg/weston/autolaunch \
-	etc/xdg/weston/weston.ini \
 	usr/bin/lsvm \
 	usr/bin/vm-console \
 	usr/bin/vm-start \
@@ -92,11 +90,7 @@ S6_RC_FILES = \
 	etc/s6-rc/ok-all/contents \
 	etc/s6-rc/ok-all/type \
 	etc/s6-rc/static-nodes/type \
-	etc/s6-rc/static-nodes/up \
-	etc/s6-rc/weston/dependencies \
-	etc/s6-rc/weston/notification-fd \
-	etc/s6-rc/weston/type \
-	etc/s6-rc/weston/run
+	etc/s6-rc/static-nodes/up 
 
 # s6-rc-compile's input is a directory, but that doesn't play nice
 # with Make, because it won't know to update if some file in the
