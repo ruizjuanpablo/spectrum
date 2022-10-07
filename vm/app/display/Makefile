@@ -4,12 +4,14 @@
 # qemu-kvm is non-standard, but is present in at least Fedora and
 # Nixpkgs.  If you don't have qemu-kvm, you'll need to set e.g.
 # QEMU_KVM = qemu-system-x86_64 -enable-kvm.
-QEMU_KVM = qemu-kvm
+QEMU_KVM = qemu-system-aarch64
 CLOUD_HYPERVISOR = cloud-hypervisor
 
 VMM = qemu
 
-HOST_FILES = host/data/appvm-display/providers/net/netvm
+HOST_FILES = \
+	host/data/appvm-display/providers/net/netvm \
+	host/data/appvm-display/imx8qm-mek-hdmi-qemu.dtb
 
 HOST_BUILD_FILES = \
 	build/host/data/appvm-display/rootfs.ext4 \
@@ -93,17 +95,43 @@ build/etc/s6-rc: $(VM_S6_RC_FILES)
 	    exit=$$?; rm -r $$dir; exit $$exit
 
 run-qemu: build/host/data/appvm-display/rootfs.ext4
-	$(QEMU_KVM) -m 128 -cpu host -machine q35,kernel=$(KERNEL) -vga none \
-	  -drive file=build/host/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=on \
-	  -append "console=ttyS0 root=/dev/vda" \
-	  -netdev user,id=net0 \
-	  -device virtio-net,netdev=net0,mac=0A:B3:EC:00:00:00 \
-	  -chardev vc,id=virtiocon0 \
-	  -device virtio-serial-pci \
-	  -device virtconsole,chardev=virtiocon0
+	echo To run display VM with QEMU
+	echo vfio-platform > /sys/bus/platform/devices/56000000.bus/driver_override
+	echo 56000000.bus > /sys/bus/platform/drivers_probe
+	echo vfio-platform  > /sys/bus/platform/devices/5d1d0000.mailbox/driver_override
+	echo 5d1d0000.mailbox > /sys/bus/platform/drivers_probe
+	echo vfio-platform > /sys/bus/platform/devices/53100000.gpu/driver_override
+	echo 53100000.gpu > /sys/bus/platform/drivers_probe
+	echo vfio-platform > /sys/bus/platform/devices/d0000000.vm_cma_p/driver_override
+	echo d0000000.vm_cma_p > /sys/bus/platform/drivers_probe
+	echo
+	echo
+	ls -lah /sys/bus/platform/drivers/vfio-platform/
+	find /sys/kernel/iommu_groups/ -type l
+	qemu-system-aarch64 \
+		-M virt,gic-version=host -enable-kvm \
+		-cpu host \
+		-m 1G \
+		-kernel /ext/svc/data/appvm-display/Image \
+		-drive file=/ext/svc/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=on \
+		-dtb /ext/svc/data/appvm-display/imx8qm-mek-hdmi-qemu.dtb \
+		-nographic -vga none \
+		-append "loglevel=7 rootwait root=/dev/vda console=ttyS0 galcore.showArgs=1" \
+		-device qemu-xhci,id=usb                                     \
+		-device usb-host,bus=usb.0,vendorid=0x1357,productid=0x1000 \
+		-device vfio-platform,host=d0000000.vm_cma_p \
+		-device vfio-platform,host=56000000.bus \
+		-device vfio-platform,host=5d1d0000.mailbox \
+		-device vfio-platform,host=53100000.gpu \
+		-netdev user,id=net0 \
+		-device virtio-net,netdev=net0,mac=0A:B3:EC:00:00:00 \
+		-chardev vc,id=virtiocon0 \
+		-device virtio-serial-pci \
+		-device virtconsole,chardev=virtiocon0 
 .PHONY: run-qemu
 
 run-cloud-hypervisor: build/host/data/appvm-display/rootfs.ext4
+	echo To run display VM with cloudhypervisor
 	$(CLOUD_HYPERVISOR) \
 	    --api-socket path=vmm.sock \
 	    --memory size=128M \
@@ -116,6 +144,7 @@ run-cloud-hypervisor: build/host/data/appvm-display/rootfs.ext4
 .PHONY: run-cloud-hypervisor
 
 run: run-$(VMM)
+	echo To run display VM
 .PHONY: run
 
 clean:
