@@ -18,6 +18,7 @@ let
   qemu = pkgs.pkgsMusl.qemu.override { 
     gtkSupport = false; 
     sdlSupport = false; 
+    hostCpuOnly = true;
     extraPatches = [./0001-Increased-VFIO-platform-size.patch];
   };
 
