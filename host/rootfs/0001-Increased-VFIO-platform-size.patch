@@ -1,9 +1,9 @@
-From b8685d9a03c2e781a9ed5334befa238d04397942 Mon Sep 17 00:00:00 2001
-From: Juan Pablo Ruiz <juanpablo@ssrc.tii.ae>
-Date: Fri, 30 Sep 2022 16:38:20 +0400
-Subject: [PATCH 1/1] Increased VFIO platform size
+From a2fa0f81aab424327ff8f0eb8d0b59183e2cd86c Mon Sep 17 00:00:00 2001
+From: Juan Pablo Ruiz <juanpablo.ruiz@tii.ae>
+Date: Sun, 9 Oct 2022 22:07:23 +0400
+Subject: [PATCH] Increased VFIO platform size
 
-- Increase the VFIO platform bus size from 32MB to 48MB
+- Increase the VFIO platform bus size from 32MB to 1GB
 - Change the VM RAM base address from 0x4000 0000 to 0x8000 0000
 - Prints the virtual IRQs for the passthrough devic
 
@@ -71,7 +71,7 @@ index a47f38dfc9..56b7ba35b4 100644
              fprintf(stderr, "couldn't add /memory@%"PRIx64" node\n",
                      binfo->loader_start);
 diff --git a/hw/arm/virt.c b/hw/arm/virt.c
-index d2e5ecd234..f7d583722c 100644
+index d2e5ecd234..7bddcf2c43 100644
 --- a/hw/arm/virt.c
 +++ b/hw/arm/virt.c
 @@ -156,13 +156,13 @@ static const MemMapEntry base_memmap[] = {
@@ -79,14 +79,14 @@ index d2e5ecd234..f7d583722c 100644
      [VIRT_MMIO] =               { 0x0a000000, 0x00000200 },
      /* ...repeating for a total of NUM_VIRTIO_TRANSPORTS, each of that size */
 -    [VIRT_PLATFORM_BUS] =       { 0x0c000000, 0x02000000 },
-+    [VIRT_PLATFORM_BUS] =       { 0x0b000000, 0x03000000 },
      [VIRT_SECURE_MEM] =         { 0x0e000000, 0x01000000 },
      [VIRT_PCIE_MMIO] =          { 0x10000000, 0x2eff0000 },
      [VIRT_PCIE_PIO] =           { 0x3eff0000, 0x00010000 },
      [VIRT_PCIE_ECAM] =          { 0x3f000000, 0x01000000 },
++    [VIRT_PLATFORM_BUS] =       { 0x40000000, 0x40000000 },
      /* Actual RAM size depends on initial RAM and device memory settings */
 -    [VIRT_MEM] =                { GiB, LEGACY_RAMLIMIT_BYTES },
-+    [VIRT_MEM] =                { 2*GiB, LEGACY_RAMLIMIT_BYTES },
++    [VIRT_MEM] =                { 0x80000000, LEGACY_RAMLIMIT_BYTES },
  };
  
  /*
