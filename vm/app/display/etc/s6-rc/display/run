@@ -22,6 +22,6 @@ fdmove -c 2 0
 foreground { clear }
 unexport ?
 
-# Run catgirl, then a login shell to allow for debugging.
+# Run display vm, then a login shell to allow for debugging.
 foreground { printf "Display VM" }
 exec -l sh

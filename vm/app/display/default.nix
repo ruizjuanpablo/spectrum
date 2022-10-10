@@ -9,11 +9,17 @@ pkgs.pkgsStatic.callPackage (
 
 { lib, stdenvNoCC, runCommand, writeReferencesToFile, buildPackages
 , s6-rc, tar2ext4
-, busybox, cacert, execline, kmod, mdevd, s6, s6-linux-init
+, busybox, cacert, execline, kmod, mdevd, s6, s6-linux-init, xorg
 }:
 
 let
   inherit (lib) cleanSource cleanSourceWith concatMapStringsSep hasSuffix;
+
+  pkgsGui = pkgs.pkgsMusl.extend (final: super: {
+    systemd = final.libudev-zero;
+  });
+
+  foot = pkgsGui.foot.override { allowPgo = false; };
 
   packages = [
     execline kmod mdevd s6 s6-linux-init s6-rc
@@ -28,14 +34,20 @@ let
         CONFIG_RMMOD n
       '';
     })
-  ];
+  ] ++ (with pkgsGui; [ foot westonLite ]);
 
   packagesSysroot = runCommand "packages-sysroot" {
     inherit packages;
     passAsFile = [ "packages" ];
+    nativeBuildInputs = [ xorg.lndir ];
   } ''
     mkdir -p $out/usr/bin $out/usr/share
     ln -s ${concatMapStringsSep " " (p: "${p}/bin/*") packages} $out/usr/bin
+
+    for pkg in ${lib.escapeShellArgs [ pkgsGui.mesa.drivers pkgsGui.dejavu_fonts ]}; do
+        lndir -silent "$pkg" "$out/usr"
+    done
+
     ln -s ${kernel}/lib "$out"
     ln -s ${terminfo}/share/terminfo $out/usr/share
     ln -s ${cacert}/etc/ssl $out/usr/share
@@ -47,7 +59,7 @@ let
         -T ${writeReferencesToFile packagesSysroot} .
   '';
 
-  kernel = pkgs.linux_imx8_display_vm.override {
+  kernel = pkgs.linux_imx8.override {
     structuredExtraConfig = with lib.kernel; {
       EFI_STUB=yes;
       EFI=yes;

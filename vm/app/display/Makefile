@@ -11,7 +11,7 @@ VMM = qemu
 
 HOST_FILES = \
 	host/data/appvm-display/providers/net/netvm \
-	host/data/appvm-display/imx8qm-mek-hdmi-qemu.dtb
+	host/data/appvm-display/imx8qm-mek-hdmi-vm.dtb
 
 HOST_BUILD_FILES = \
 	build/host/data/appvm-display/rootfs.ext4 \
@@ -49,7 +49,11 @@ VM_FILES = \
 	etc/mdev/iface \
 	etc/passwd \
 	etc/resolv.conf \
+	etc/xdg/weston/autolaunch \
+	etc/xdg/weston/weston.ini \
 	etc/s6-linux-init/scripts/rc.init
+
+	
 VM_DIRS = dev run proc sys \
 	etc/s6-linux-init/env \
 	etc/s6-linux-init/run-image/service
@@ -83,7 +87,11 @@ VM_S6_RC_FILES = \
 	etc/s6-rc/mdevd/run \
 	etc/s6-rc/mdevd/type \
 	etc/s6-rc/ok-all/contents \
-	etc/s6-rc/ok-all/type
+	etc/s6-rc/ok-all/type \
+	etc/s6-rc/weston/dependencies \
+	etc/s6-rc/weston/notification-fd \
+	etc/s6-rc/weston/type \
+	etc/s6-rc/weston/run
 
 build/etc/s6-rc: $(VM_S6_RC_FILES)
 	mkdir -p $$(dirname $@)
@@ -114,7 +122,7 @@ run-qemu: build/host/data/appvm-display/rootfs.ext4
 		-m 1G \
 		-kernel /ext/svc/data/appvm-display/Image \
 		-drive file=/ext/svc/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=on \
-		-dtb /ext/svc/data/appvm-display/imx8qm-mek-hdmi-qemu.dtb \
+		-dtb /ext/svc/data/appvm-display/imx8qm-mek-hdmi-vm.dtb \
 		-nographic -vga none \
 		-append "loglevel=7 rootwait root=/dev/vda console=ttyS0 galcore.showArgs=1" \
 		-device qemu-xhci,id=usb                                     \
