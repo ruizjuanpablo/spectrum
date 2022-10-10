@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# Bind and prepare passthrough devices
+echo Binding devices to vfio-platform driver
+echo vfio-platform > /sys/bus/platform/devices/56000000.bus/driver_override
+echo 56000000.bus > /sys/bus/platform/drivers_probe
+echo vfio-platform  > /sys/bus/platform/devices/5d1d0000.mailbox/driver_override
+echo 5d1d0000.mailbox > /sys/bus/platform/drivers_probe
+echo vfio-platform > /sys/bus/platform/devices/53100000.gpu/driver_override
+echo 53100000.gpu > /sys/bus/platform/drivers_probe
+echo vfio-platform > /sys/bus/platform/devices/d0000000.vm_cma_p/driver_override
+echo d0000000.vm_cma_p > /sys/bus/platform/drivers_probe
+echo
+echo
+echo List of devices binded to vfio-platorm
+ls -lah /sys/bus/platform/drivers/vfio-platform/
+echo List of IOMMU groups
+find /sys/kernel/iommu_groups/ -type l
+echo Running display VM with Qemu
+
+# Find HID USB devices
+FOUND_USB_DEVICES=""
+QEMUOPT_USB=""
+for DEVICE in /sys/bus/usb/devices/*-*:*
+do
+    if [ -f $DEVICE/bInterfaceClass ]
+    then
+        if [ "$(cat $DEVICE/bInterfaceClass)" == "03" ] && [[ "$(cat $DEVICE/bInterfaceProtocol)" == "01" || "$(cat $DEVICE/bInterfaceProtocol)" == "02" ]]
+        then
+            VENDOR_ID=$(ls -1 $DEVICE | egrep 0003 | cut -d ":" -f 2)
+            PRODUCT_ID=$(ls -1 $DEVICE | egrep 0003 | cut -d ":" -f 3 | cut -d "." -f 1)
+            FOUND_USB_DEVICES="$FOUND_USB_DEVICES ${VENDOR_ID}:${PRODUCT_ID}"
+        fi
+    fi
+done
+
+echo ${FOUND_USB_DEVICES}
+
+# Remove duplicate entries. Will happen if there are usb receivers for example
+FOUND_USB_DEVICES=$(echo "${FOUND_USB_DEVICES}" | xargs -n1 | sort -u | xargs)
+
+for DEVICE in $FOUND_USB_DEVICES
+do
+    VENDOR_ID=$(echo $DEVICE | cut -d ":" -f 1)
+    PRODUCT_ID=$(echo $DEVICE | cut -d ":" -f 2)
+    QEMUOPT_USB="${QEMUOPT_USB}-device usb-host,bus=usb.0,vendorid=0x${VENDOR_ID},productid=0x${PRODUCT_ID} "
+done
+
+echo ${QEMUOPT_USB}
+
+
+qemu-system-aarch64 \
+    -M virt,gic-version=host -enable-kvm \
+    -cpu host \
+    -m 1G \
+    -kernel /ext/svc/data/appvm-display/Image \
+    -drive file=/ext/svc/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=on \
+    -dtb /ext/svc/data/appvm-display/imx8qm-mek-hdmi-vm.dtb \
+    -nographic -vga none \
+    -append "loglevel=7 rootwait root=/dev/vda console=ttyAMA0 galcore.showArgs=1" \
+    -device qemu-xhci,id=usb \
+    ${QEMUOPT_USB} \
+    -device vfio-platform,host=d0000000.vm_cma_p \
+    -device vfio-platform,host=56000000.bus \
+    -device vfio-platform,host=5d1d0000.mailbox \
+    -device vfio-platform,host=53100000.gpu \
+    -netdev user,id=net0 \
+    -device virtio-net,netdev=net0,mac=0A:B3:EC:00:00:00 \
+    -chardev vc,id=virtiocon0 \
+    -device virtio-serial-pci \
+    -device virtconsole,chardev=virtiocon0 

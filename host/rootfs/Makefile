@@ -34,6 +34,7 @@ FILES = \
 	etc/s6-linux-init/run-image/service/getty-ttyLP0/run \
 	etc/s6-linux-init/scripts/rc.init \
 	usr/bin/lsvm \
+	usr/bin/start-display-vm \
 	usr/bin/vm-console \
 	usr/bin/vm-start \
 	usr/bin/vm-stop
