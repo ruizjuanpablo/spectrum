@@ -45,13 +45,23 @@ build/host/data/appvm-display/rootfs.ext4: build/rootfs.tar
 VM_FILES = \
 	etc/fstab \
 	etc/init \
+	etc/login \
 	etc/mdev.conf \
-	etc/mdev/iface \
+	etc/mdev/block/add \
+	etc/mdev/listen \
+	etc/mdev/net/add \
+	etc/mdev/wait \
 	etc/passwd \
 	etc/resolv.conf \
+	etc/s6-linux-init/run-image/service/getty-tty1/run \
+	etc/s6-linux-init/run-image/service/getty-tty2/run \
+	etc/s6-linux-init/run-image/service/getty-tty3/run \
+	etc/s6-linux-init/run-image/service/getty-tty4/run \
+	etc/s6-linux-init/run-image/service/getty-ttyS0/run \
+	etc/s6-linux-init/run-image/service/getty-ttyLP0/run \
+	etc/s6-linux-init/scripts/rc.init \
 	etc/xdg/weston/autolaunch \
 	etc/xdg/weston/weston.ini \
-	etc/s6-linux-init/scripts/rc.init
 
 	
 VM_DIRS = dev run proc sys \
@@ -78,6 +88,15 @@ build/rootfs.tar: build/empty $(PACKAGES_TAR) $(VM_FILES) $(VM_BUILD_FILES)
 	done
 
 VM_S6_RC_FILES = \
+	etc/s6-rc/card0/type \
+	etc/s6-rc/card0/up \
+	etc/s6-rc/ext-rc-init/dependencies \
+	etc/s6-rc/ext-rc-init/type \
+	etc/s6-rc/ext-rc-init/up \
+	etc/s6-rc/ext-rc/contents \
+	etc/s6-rc/ext-rc/type \
+	etc/s6-rc/ext/type \
+	etc/s6-rc/ext/up \
 	etc/s6-rc/display/run \
 	etc/s6-rc/display/type \
 	etc/s6-rc/mdevd-coldplug/dependencies \
@@ -88,6 +107,8 @@ VM_S6_RC_FILES = \
 	etc/s6-rc/mdevd/type \
 	etc/s6-rc/ok-all/contents \
 	etc/s6-rc/ok-all/type \
+	etc/s6-rc/static-nodes/type \
+	etc/s6-rc/static-nodes/up \
 	etc/s6-rc/weston/dependencies \
 	etc/s6-rc/weston/notification-fd \
 	etc/s6-rc/weston/type \

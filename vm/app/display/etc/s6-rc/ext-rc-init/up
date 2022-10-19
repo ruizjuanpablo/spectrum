@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: EUPL-1.2+
+# SPDX-FileCopyrightText: 2021-2022 Alyssa Ross <hi@alyssa.is>
+
+if { mkdir -p /run/s6-rc.ext.src }
+
+if {
+  elglob -0 dirs /ext/svc/data/*/
+  forx -E dir { $dirs }
+  backtick -E name { basename -- $dir }
+
+  cd /run/s6-rc.ext.src
+
+  if { mkdir -- ${name} ${name}/dependencies.d ${name}/env }
+  if { redirfd -w 1 ${name}/type echo longrun }
+  if { redirfd -w 1 ${name}/notification-fd echo 3 }
+  if { ln -s -- /bin/start-vm ${name}/run }
+
+  elglob -0 paths /ext/svc/data/${name}/providers/net/*
+  forx -pE path { $paths }
+  backtick -E dep { basename -- $path }
+  touch -- ${name}/dependencies.d/${dep}
+}
+
+if { s6-rc-compile /run/s6-rc.ext.db /run/s6-rc.ext.src }
+s6-rc-init -c /run/s6-rc.ext.db -l /run/s6-rc.ext -p ext- /run/service
