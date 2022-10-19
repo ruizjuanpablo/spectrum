@@ -8,7 +8,7 @@
 pkgs.pkgsStatic.callPackage (
 
 { lib, stdenvNoCC, runCommand, writeReferencesToFile, buildPackages
-, s6-rc, tar2ext4
+, s6-rc, tar2ext4, e2fsprogs
 , busybox, cacert, execline, kmod, mdevd, s6, s6-linux-init, xorg
 }:
 
@@ -85,7 +85,7 @@ stdenvNoCC.mkDerivation {
     src = cleanSource ./.;
   };
 
-  nativeBuildInputs = [ s6-rc tar2ext4 ];
+  nativeBuildInputs = [ s6-rc tar2ext4 e2fsprogs];
 
   PACKAGES_TAR = packagesTar;
   VMLINUX = "${kernel.dev}/vmlinux";

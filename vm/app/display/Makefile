@@ -40,6 +40,9 @@ build/host/data/appvm-display/Image: $(IMAGE)
 build/host/data/appvm-display/rootfs.ext4: build/rootfs.tar
 	mkdir -p $$(dirname $@)
 	tar2ext4 -i build/rootfs.tar -o $@.tmp
+	dd if=/dev/zero of=$@.tmp bs=1MiB count=500 conv=notrunc oflag=append
+	resize2fs $@.tmp
+	tune2fs -O ^read-only $@.tmp
 	mv $@.tmp $@
 
 VM_FILES = \
