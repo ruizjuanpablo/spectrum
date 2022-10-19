@@ -1,89 +1,63 @@
+# Spectrum OS with GPU passthrough on DisplayVM
+
 The canonical URL for the upstream Spectrum git repository is
 <https://spectrum-os.org/git/spectrum/>.
 
-To try Spectrum OS, you need to build it from source and then install it to an SD card.
+To try Spectrum OS, you need to build it from the source and then install it to an SD card.
 
-> Cross-compiled version of Spectrum OS is for i.MX 8QXP board only.
+> Cross-compiled version of Spectrum OS is for iMX8QM board only with display VM.
+
+This document describes how the GPU passthrough works with the display guest virtual machine (VM) in Spectrum OS. The next diagram shows the system's main components. First, we have a VM called **appvm-display**. This VM has a passthrough connection to the iMX8QM hardware. For this case, the GPU/HDMI for display output, and the USB human interface input (for this case USB keyboard/mouse and touchscreen). 
+
+![Stack diagram](Documentation/diagrams/displayvm_stack.drawio.png)
+
+The weston/wayland desktop was moved from the host to the display VM. Then the display VM is able to generate all display output directly to the HDMI using the GPU drivers and the GPU passthrough. Also, this VM captupres the human interface devices through the USB passthrough for keyboard/mouse and touch screen. 
+
+On the **Host user space** we have removed weston, in order that all graphics are managed by the display VM. Also, Qemu was added, due the current version of the display VM does not support GPU passthrough using cloud-hypervisor. A **start-dispaly-vm** script was added to launch the display VM.
+
+On the hardware side, an HDMI LCD touch screen was connected to the iMX8QM HDMI TX port. Also, a USB type C hub was connected to the USB OTG port. In this hub a keyboard/mouse combo was connected alongside the USB for the LCD's touch screen.
 
 ## Building a Spectrum OS Image
 
 Clone sources of spec and nix-spec (cross-compile branches for i.MX 8QXP):
 
-	$ git clone -b aarch64-imx8-crosscompile https://github.com/tiiuae/nixpkgs-spectrum/
-    $ git clone -b aarch64-imx8-crosscompile https://github.com/tiiuae/spectrum/
+	$ git clone -b display_passthrough https://github.com/ruizjuanpablo/nixpkgs-spectrum.git
+    $ git clone -b display_passthrough https://github.com/ruizjuanpablo/spectrum.git
 
-Set up the Spectrum binary cache.
-
-Note the following:
-
-	- The custom binary cache is located here: <http://binarycache.vedenemo.dev>.
-	- The public key of this cache is:
-      `binarycache.vedenemo.dev:Yclq5TKpx2vK7WVugbdP0jpln0/dPHrbUYfsH3UXIps=`
-    - Spectrum OS own binary cache is located here: <https://cache.dataaturservice.se/spectrum/>.
-    - The public key of this cache is:
-        `spectrum-os.org-1:rnnSumz3+Dbs5uewPlwZSTP0k3g/5SRG4hD7Wbr9YuQ=`
-
-
-* For NixOS based users.
-
-add the following to your `configuration.nix` file
-
-``` nix
-  nix.settings.trusted-substituters = [
-    "http://binarycache.vedenemo.dev"
-    "https://cache.dataaturservice.se/spectrum/"
-  ];
-
-  nix.settings.trusted-public-keys = [
-    "binarycache.vedenemo.dev:Yclq5TKpx2vK7WVugbdP0jpln0/dPHrbUYfsH3UXIps="
-    "spectrum-os.org-1:rnnSumz3+Dbs5uewPlwZSTP0k3g/5SRG4hD7Wbr9YuQ="
-  ];
-```
-See the [trusted-substitutors](https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-substituters) configuration option for further details.
-
-
-* Change non-NixOS machine configuration.
-
-    All configurations are made in the `/etc/nix/nix.conf` file. It should be possible to carry everything to the NixOS configuration with little effort.
-
-    To get custom binary caches in use, add them to the `substitutes` list inside the `nix.conf` file and then add their public keys to the `trusted-public-keys` list in the same file:
-
-      trusted-substituters = http://binarycache.vedenemo.dev https://cache.dataaturservice.se/spectrum/ https://cache.nixos.org/
-      trusted-public-keys = binarycache.vedenemo.dev:Yclq5TKpx2vK7WVugbdP0jpln0/dPHrbUYfsH3UXIps= spectrum-os.org-1:rnnSumz3+Dbs5uewPlwZSTP0k3g/5SRG4hD7Wbr9YuQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-
-	> After every change in the Nix configuration, run `systemctl restart nix-daemon.service`. In this case, the binary cache will be used automatically when `nix-build` is run.
-
-    If necessary, you can make Nix to use specific binary cache with the`--substituters` argument:
-
-	  $ nix-build /nix/store/<derivation>.drv --substituters <binary cache address>
-
-* Check if a package or derivation is in the binary cache:
-
-	  $ curl <binary-cache-address>/<package-or-.drv-hashsum>.narinfo
+Set up the Spectrum binary cache as described on: <https://github.com/tiiuae/spectrum/tree/aarch64-imx8-crosscompile#readme>
 
 To build the image utilizing binary-cache, run:
 
 	$ NIXPKGS_ALLOW_UNFREE=1 nix-build spectrum/img/imx8qm/ -I nixpkgs=nixpkgs-spectrum --option substituters http://binarycache.vedenemo.dev
 
-To build the image from source (slower complete build), run:
-
-	$ NIXPKGS_ALLOW_UNFREE=1 nix-build spectrum/img/imx8qxp/ -I nixpkgs=nixpkgs-spectrum
-
-After you can use the image from the `./result` directory and flash it to an SD card.
-
 ## Installing Spectrum OS
 
 Before installation:
 
-* Prepare a 4 GB SD card.
-* Make sure that the i.MX 8QXP board is configured to boot from an SD card.
-
-To run Spectrum OS on i.MX 8QXP board, perform the following steps:
-
-* Use the image from the previous step or download the prebuilt image _20220826-spectrum-live-imx8qxp-yuriy-custom.img_ from the page: <http://arm-kal.us.to:20080/>.
-
-* Copy the downloaded image to your SD card to create bootable media:
+* Prepare an 8GB or more SD card.
+* Make sure that the iMX8QM board is configured to boot from an SD card.
+* Copy the downloaded or generated image to your SD card to create bootable media:
 
 	  $ sudo dd if=spectrum-live.img of=/dev/sdx bs=1M conv=fsync
 
 	Change **sdx** to match the one used by the SD card.
+
+## Running the display VM
+
+* Insert the SD card to the iMX8QM board
+* Connect the HDMI LCD touch screen to the HDMI TX port on the iMX8QM board
+* Connect the USB type C hub to the iMX8QM USB OTG port, and connect to the hub a keyboard/mouse combo and a use cable to the HDMI LCD touch screen. 
+* Power on the board (Note: the board should be off for at least 10 seconds before bootup)
+* After Specturn is launched, run the display VM by running the following command from the iMX8QM serial console:
+
+	  # start-display-vm
+
+* You will see weston/wayland started on the HDMI LCD screen. Here you can use the USB keyboard/mouse and the touchscreen. 
+
+* To launch the 3D demos, open the terminal on the HDMI LCD screen. In that terminal with the USB keyboard run the next commands:
+
+	  # cd /nix/store/0g5xbpi2p609b5h4x5cx1lkjl7znklbj-imx-gpu-viv-aarch64-unknown-linux-gnu-6.4.3.p4.2/opt/viv_samples/vdk/
+	  # ./tutorial3_es20
+
+
+
