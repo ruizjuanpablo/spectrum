@@ -61,16 +61,6 @@ let
 
   kernel = pkgs.linux_imx8.override {
     structuredExtraConfig = with lib.kernel; {
-      EFI_STUB=yes;
-      EFI=yes;
-      VIRTIO = yes;
-      VIRTIO_PCI = yes;
-      VIRTIO_BLK = yes;
-      VIRTIO_CONSOLE = yes;
-      EXT4_FS = yes;
-      DRM_BOCHS = yes;
-      DRM = yes;
-      AGP = yes;
     };
   };
 in
