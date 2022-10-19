@@ -15,7 +15,7 @@ pkgs.pkgsStatic.callPackage (
 let
   inherit (lib) cleanSource cleanSourceWith concatMapStringsSep hasSuffix;
 
-  pkgsGui = pkgs.pkgsMusl.extend (final: super: {
+  pkgsGui = pkgs.extend (final: super: {
     systemd = final.libudev-zero;
   });
 

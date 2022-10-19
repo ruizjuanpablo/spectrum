@@ -15,7 +15,7 @@ let
   start-vm = import ../start-vm { pkgs = pkgs.pkgsStatic; };
 
 
-  qemu = pkgs.pkgsMusl.qemu.override { 
+  qemu = pkgs.qemu.override { 
     gtkSupport = false; 
     sdlSupport = false; 
     hostCpuOnly = true;
