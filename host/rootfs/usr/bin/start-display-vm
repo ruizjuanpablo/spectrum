@@ -61,10 +61,10 @@ qemu-system-aarch64 \
     -cpu host \
     -m 1G \
     -kernel /ext/svc/data/appvm-display/Image \
-    -drive file=/ext/svc/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=on \
+    -drive file=/ext/svc/data/appvm-display/rootfs.ext4,if=virtio,format=raw,readonly=off \
     -dtb /ext/svc/data/appvm-display/imx8qm-mek-hdmi-vm.dtb \
     -nographic -vga none \
-    -append "loglevel=7 rootwait root=/dev/vda console=ttyAMA0 galcore.showArgs=1" \
+    -append "options rw loglevel=7 rootwait root=/dev/vda console=ttyAMA0 galcore.showArgs=1" \
     -device qemu-xhci,id=usb \
     ${QEMUOPT_USB} \
     -device vfio-platform,host=d0000000.vm_cma_p \
