@@ -2,9 +2,6 @@
 # SPDX-FileCopyrightText: 2021 Alyssa Ross <hi@alyssa.is>
 
 { pkgs ? import <nixpkgs> {
-    crossSystem = {
-      config = "aarch64-unknown-linux-gnu";
-    };
   }}:
 
 with pkgs;
